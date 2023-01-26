@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Box, Button, Fade, Flex, Text } from '@chakra-ui/react'
 import { AvailableWallet } from 'src/screens/landing/_utils/types'
+import { useConnect } from 'wagmi'
 
 import { ArrowRight } from '@/generated/icons'
 
@@ -37,7 +38,22 @@ function ConnectWalletButton({ wallet }: Props) {
 					<Button
 						bg='gray.200'
 						borderRadius='0.5rem'
-						rightIcon={<ArrowRight color='black' />}>
+						rightIcon={<ArrowRight color='black' />}
+						onClick={
+							async() => {
+								const connector = connectors.find((x) => x.id === wallet.id)!
+								// swallow error here so we don't fail the remaining logic
+								const isConnected = await connector.isAuthorized().catch(() => false)
+
+								if(!isConnected) {
+									try {
+										await connectAsync({ connector })
+									} catch(e) {
+										// console.log('evm error', e)
+									}
+								}
+							}
+						}>
 						Connect
 					</Button>
 				</Fade>
@@ -46,6 +62,10 @@ function ConnectWalletButton({ wallet }: Props) {
 	}
 
 	const [isHovered, setIsHovered] = useState<boolean>(false)
+	const {
+		connectAsync,
+		connectors,
+	} = useConnect()
 
 	return buildComponent()
 }

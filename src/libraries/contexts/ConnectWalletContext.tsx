@@ -1,5 +1,6 @@
-import { createContext, ReactElement, useState } from 'react'
+import { createContext, ReactElement, useEffect, useState } from 'react'
 import { ConnectWalletContextType } from 'src/libraries/types'
+import { useAccount } from 'wagmi'
 
 const ConnectWalletContext = createContext<ConnectWalletContextType | null>(null)
 
@@ -18,7 +19,14 @@ const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElem
 		)
 	}
 
+	const { isConnected } = useAccount()
 	const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+
+	useEffect(() => {
+		if(isConnected) {
+			setIsModalOpen(false)
+		}
+	}, [isConnected])
 
 	return context()
 }
