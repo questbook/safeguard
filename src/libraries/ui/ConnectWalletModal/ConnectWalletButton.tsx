@@ -14,8 +14,7 @@ function ConnectWalletButton({ wallet }: Props) {
 		return (
 			<Flex
 				align='center'
-				p='2rem'
-				h='5rem'
+				p='1rem'
 				justifyContent='flex-start'
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}

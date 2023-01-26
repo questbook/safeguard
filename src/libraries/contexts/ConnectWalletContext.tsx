@@ -1,9 +1,9 @@
-import { createContext, useState } from 'react'
+import { createContext, ReactElement, useState } from 'react'
 import { ConnectWalletContextType } from 'src/libraries/types'
 
 const ConnectWalletContext = createContext<ConnectWalletContextType | null>(null)
 
-const ConnectWalletProvider = ({ children }: any) => {
+const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElement[]}) => {
 	const context = () => {
 		return (
 			<ConnectWalletContext.Provider
@@ -18,7 +18,7 @@ const ConnectWalletProvider = ({ children }: any) => {
 		)
 	}
 
-	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+	const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
 
 	return context()
 }
