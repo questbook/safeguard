@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
-    "lint:fix": "eslint . --ext .js,.ts,.jsx,.tsx --fix"
+    "lint:fix": "eslint . --ext .js,.ts,.jsx,.tsx --fix",
+    "generate:icons": "create-chakra-icons -i public/icons -o src/generated/icons.ts --ts -T F"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.4.9",
@@ -17,8 +18,10 @@
     "@types/node": "18.11.18",
     "@types/react": "18.0.27",
     "@types/react-dom": "18.0.10",
+    "create-chakra-icons": "^1.1.0",
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-next": "13.1.5",
+    "ethers": "^5.7.2",
     "framer-motion": "^8.5.2",
     "next": "13.1.5",
     "react": "18.2.0",

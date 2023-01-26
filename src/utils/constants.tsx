@@ -1,7 +1,9 @@
 import { MetamaskFox } from 'src/utils/assets/MetamaskFox'
 import { WalletConnectLogo } from 'src/utils/assets/WalletConnectLogo'
 
-const availableWallets = [{
+import { AvailableWallet } from '@/screens/landing/_utils/types'
+
+const availableWallets: AvailableWallet[] = [{
 	name: 'Metamask',
 	icon: <MetamaskFox
 		h={8}
