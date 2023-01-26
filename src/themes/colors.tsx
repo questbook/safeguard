@@ -1,19 +1,15 @@
 const colors = {
-	brand: {
-		400: '#EBFE53',
+	green: '#00CC43',
+	black: {
+		100: '#13190D',
+		200: '#444639',
+		300: '#787666'
 	},
-    black: {
-        100: '#1F1F33',
-        200: '#222222'
-    },
-    blue: {
-        100: '#0065FF',
-    },
-    gray: {
-        100: '#E0E0EC',
-        200: '#F0F0F7',
-        500: '#8D8B87'
-    }
+	gray: {
+		100: '#CEC9BD',
+		200: '#F3F1EE'
+	},
+	white: '#FFFFFF'
 }
 
 export default colors
