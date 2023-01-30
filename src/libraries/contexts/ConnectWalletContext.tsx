@@ -20,7 +20,7 @@ const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElem
 	}
 
 	const { isConnected } = useAccount()
-	const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
 	useEffect(() => {
 		if(isConnected) {
