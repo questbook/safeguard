@@ -11,7 +11,7 @@ const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElem
 				value={
 					{
 						isModalOpen,
-						onModalClose: () => setIsModalOpen(false),
+						setIsModalOpen,
 					}
 				}>
 				{children}

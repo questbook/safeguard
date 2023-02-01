@@ -1,22 +1,22 @@
-import { useState } from 'react'
+import { ReactElement, useState } from 'react'
 import { Button, Circle, Flex, IconButton, Input, Progress, Text } from '@chakra-ui/react'
 
 import { Add, Close } from '@/generated/icons'
+import NavbarLayout from '@/libraries/ui/NavbarLayout'
 import { isValidEthereumAddress } from '@/utils'
 
 function ReviewerGuard() {
 	const buildComponent = () => {
 		return (
 			<Flex
-				w='100%'
-				h='100vh'>
+				w='100%'>
 				<Flex
 					zIndex={-1}
 					position='absolute'
 					left={0}
 					right={0}
 					top={0}
-					bg='gray.100'
+					bg='gray.200'
 					h='50%' />
 				<Flex
 					zIndex={-1}
@@ -30,8 +30,8 @@ function ReviewerGuard() {
 					w='100%'
 					direction='column'
 					bg='white'
-					mx='3rem'
-					my='3rem'
+					mx='4rem'
+					my='1rem'
 					borderRadius='0.5rem'
 					boxShadow='0px 2px 8px rgba(29, 25, 25, 0.1)'>
 					<Flex
@@ -52,6 +52,7 @@ function ReviewerGuard() {
 					</Flex>
 					<Flex
 						direction='column'
+						h='max-content'
 						overflowY='auto'>
 						{
 							steps.map((step, index) => {
@@ -61,7 +62,7 @@ function ReviewerGuard() {
 											key={index}
 											borderBottom='1px solid #CEC9BD'
 											px='3rem'
-											py='3rem'
+											py='2rem'
 											bg='white'>
 											{step.item()}
 										</Flex>
@@ -109,7 +110,7 @@ function ReviewerGuard() {
 						mt='auto'
 						justify='end'
 						px='4rem'
-						py='2rem'>
+						py='1rem'>
 						<Button
 							variant='primary'
 							isDisabled={currentStep < 2}>
@@ -148,7 +149,7 @@ function ReviewerGuard() {
 				<Text mt='0.25rem'>
 					Set a guard which initiates payouts based on proposal reviews
 				</Text>
-				<Flex mt='2.5rem'>
+				<Flex mt='2rem'>
 					{numberWithCircle(1)}
 					<Flex
 						direction='column'
@@ -163,8 +164,7 @@ function ReviewerGuard() {
 						</Text>
 						<Input
 							mt='2.5rem'
-							variant='flushed'
-							borderBottom='1px solid #CEC9BD'
+							placeholder='Enter safe address'
 							value={safeAddress}
 							onChange={
 								(e) => {
@@ -172,7 +172,7 @@ function ReviewerGuard() {
 								}
 							} />
 						<Flex
-							mt='2.5rem'
+							mt='1rem'
 							justify='end'>
 							<Button
 								bg='black.100'
@@ -368,5 +368,14 @@ function ReviewerGuard() {
 
 	return buildComponent()
 }
+
+ReviewerGuard.getLayout = function(page: ReactElement) {
+	return (
+		<NavbarLayout>
+			{page}
+		</NavbarLayout>
+	)
+}
+
 
 export default ReviewerGuard

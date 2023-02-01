@@ -12,7 +12,7 @@ function ConnectWalletModal() {
 	const buildComponent = () => (
 		<Modal
 			isOpen={isModalOpen}
-			onClose={onModalClose}
+			onClose={() => setIsModalOpen(false)}
 			isCentered
 			size='xl'>
 			<ModalOverlay />
@@ -51,7 +51,7 @@ function ConnectWalletModal() {
 		</Modal>
 	)
 
-	const { isModalOpen, onModalClose } = useContext(ConnectWalletContext)!
+	const { isModalOpen, setIsModalOpen } = useContext(ConnectWalletContext)!
 
 	return buildComponent()
 }

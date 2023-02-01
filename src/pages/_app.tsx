@@ -1,4 +1,6 @@
+import { ReactElement, useEffect, useState } from 'react'
 import { ChakraProvider } from '@chakra-ui/react'
+import { NextPage } from 'next'
 import type { AppProps } from 'next/app'
 import { Chain, configureChains, createClient, WagmiConfig } from 'wagmi'
 import { goerli, optimism, polygon } from 'wagmi/chains'
@@ -12,6 +14,14 @@ import '@/styles/globals.css'
 import { ConnectWalletProvider } from '@/libraries/contexts/ConnectWalletContext'
 import ConnectWalletModal from '@/libraries/ui/ConnectWalletModal'
 import theme from '@/themes'
+
+type NextPageWithLayout = NextPage & {
+	getLayout: (page: ReactElement) => ReactElement
+};
+
+type AppPropsWithLayout = AppProps & {
+	Component: NextPageWithLayout
+};
 
 const celo: Chain = {
 	id: 42220,
@@ -34,7 +44,7 @@ const { chains, provider } = configureChains([goerli, optimism, polygon, celo], 
 const client = createClient({
 	autoConnect: true,
 	connectors: [
-		new InjectedConnector({ chains }),
+		new InjectedConnector({ chains, options: { shimDisconnect: true, shimChainChangedDisconnect: false } }),
 		new WalletConnectConnector({
 		  chains,
 		  options: {
@@ -45,13 +55,13 @@ const client = createClient({
 	  provider,
 })
 
-export default function App({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppPropsWithLayout) {
 	const buildComponent = () => {
 		return (
 			<WagmiConfig client={client}>
 				<ChakraProvider theme={theme}>
 					<ConnectWalletProvider>
-						<Component {...pageProps} />
+						{getLayout?.(<Component {...pageProps} />)}
 						<ConnectWalletModal />
 					</ConnectWalletProvider>
 				</ChakraProvider>
@@ -59,5 +69,15 @@ export default function App({ Component, pageProps }: AppProps) {
 		)
 	}
 
-	return buildComponent()
+	const [hasMounted, setHasMounted] = useState(false)
+
+	useEffect(() => {
+		setHasMounted(true)
+	}, [])
+
+	const getLayout = Component.getLayout || ((page) => page)
+
+	return hasMounted ? buildComponent() : null
 }
+
+export default App

@@ -7,6 +7,7 @@ function AddressDisplay() {
 	const buildComponent = () => {
 		return (
 			<Text
+				ml='1rem'
 				px='1rem'
 				py='0.75rem'
 				bg='white'>
