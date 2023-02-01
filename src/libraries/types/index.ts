@@ -1,4 +1,4 @@
 export type ConnectWalletContextType = {
     isModalOpen: boolean
-    onModalClose: () => void
+    setIsModalOpen: (isModalOpen: boolean) => void
 }
