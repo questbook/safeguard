@@ -38,7 +38,7 @@ interface IApplicationRegistry {
             uint96
         );
 
-    function walletAddressMapping(address) external view returns (address);
+    function walletAddressMapping(bytes32) external view returns (address);
 }
 
 contract ReviewerTransactionGuard is BaseGuard {
@@ -49,11 +49,6 @@ contract ReviewerTransactionGuard is BaseGuard {
 
     modifier onlySafe() {
         require(msg.sender == safeAddress, "Unauthorised: Not the Safe");
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Unauthorised: Not the owner");
         _;
     }
 
@@ -76,7 +71,10 @@ contract ReviewerTransactionGuard is BaseGuard {
     constructor(
         address _safeAddress,
         address[] memory _reviewers,
-        uint96 _threshold
+        uint96 _threshold,
+        IApplicationRegistry _applicationReg,
+        IApplicationReviewRegistry _applicationReviewReg,
+        IWorkspaceRegistry _workspaceReg
     ) {
         require(
             _reviewers.length >= _threshold,
@@ -85,27 +83,10 @@ contract ReviewerTransactionGuard is BaseGuard {
         safeAddress = _safeAddress;
         reviewers = _reviewers;
         threshold = _threshold;
-        owner = msg.sender;
-    }
 
-    function setWorkspaceReg(IWorkspaceRegistry _workspaceReg)
-        external
-        onlyOwner
-    {
-        workspaceReg = _workspaceReg;
-    }
-
-    function setApplicationReg(IApplicationRegistry _applicationReg)
-        external
-        onlyOwner
-    {
         applicationReg = _applicationReg;
-    }
-
-    function setApplicationReviewReg(
-        IApplicationReviewRegistry _applicationReviewReg
-    ) external onlyOwner {
         applicationReviewReg = _applicationReviewReg;
+        workspaceReg = _workspaceReg;
     }
 
     function checkTransaction(
@@ -159,11 +140,15 @@ contract ReviewerTransactionGuard is BaseGuard {
     {}
 
     function fetchReviews(uint96 _appId, address _applicantPaymentAddress)
-        public view 
+        public
+        view
     {
         address applicantWalletAddress;
-        (, , , applicantWalletAddress, , , , ) = applicationReg.applications(_appId);
-        address applicantZerowalletAddress = applicationReg.walletAddressMapping(_applicantPaymentAddress);
+        (, , , applicantWalletAddress, , , , ) = applicationReg.applications(
+            _appId
+        );
+        address applicantZerowalletAddress = applicationReg
+            .walletAddressMapping(bytes32(uint256(uint160(_applicantPaymentAddress))));
 
         require(
             applicantZerowalletAddress == _applicantPaymentAddress,
@@ -174,8 +159,13 @@ contract ReviewerTransactionGuard is BaseGuard {
 
         for (uint96 i = 0; i < reviewers.length; i++) {
             string memory metadataHash;
-            address zerowalletAddress = workspaceReg.walletAddressToScwAddress(reviewers[i]);
-            (, , , , , metadataHash, ) = applicationReviewReg.reviews(zerowalletAddress, _appId);
+            address zerowalletAddress = workspaceReg.walletAddressToScwAddress(
+                reviewers[i]
+            );
+            (, , , , , metadataHash, ) = applicationReviewReg.reviews(
+                zerowalletAddress,
+                _appId
+            );
             if (bytes(metadataHash).length != 0) {
                 ++k;
             }
@@ -206,7 +196,8 @@ contract ReviewerTransactionGuard is BaseGuard {
     }
 
     function getApplicationId(bytes memory data, uint256 offset)
-        internal pure
+        internal
+        pure
         returns (uint96 appId)
     {
         assembly {
@@ -215,7 +206,8 @@ contract ReviewerTransactionGuard is BaseGuard {
     }
 
     function getFunctionSelector(bytes memory data)
-        internal pure
+        internal
+        pure
         returns (bytes4 sel)
     {
         assembly {
@@ -224,7 +216,8 @@ contract ReviewerTransactionGuard is BaseGuard {
     }
 
     function getPaymentAddress(bytes memory data, uint256 offset)
-        internal pure
+        internal
+        pure
         returns (address addr)
     {
         assembly {
@@ -240,12 +233,18 @@ contract ReviewerDeployer {
     function deploy(
         address _safeAddress,
         address[] memory _reviewers,
-        uint96 _threshold
+        uint96 _threshold,
+        IApplicationRegistry _applicationReg,
+        IApplicationReviewRegistry _applicationReviewReg,
+        IWorkspaceRegistry _workspaceReg
     ) public {
         ReviewerTransactionGuard dc = new ReviewerTransactionGuard(
             _safeAddress,
             _reviewers,
-            _threshold
+            _threshold,
+            _applicationReg,
+            _applicationReviewReg,
+            _workspaceReg
         );
         deployedContracts.push(dc);
         ++counter;
