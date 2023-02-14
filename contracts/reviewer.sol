@@ -5,7 +5,18 @@ import "@gnosis.pm/zodiac/contracts/factory/FactoryFriendly.sol";
 import "@gnosis.pm/zodiac/contracts/guard/BaseGuard.sol";
 
 interface IApplicationReviewRegistry {
-    function reviews(address, uint96) external view returns (uint96, uint96, uint96, address, address, string memory, bool);
+    function reviews(address, uint96)
+        external
+        view
+        returns (
+            uint96,
+            uint96,
+            uint96,
+            address,
+            address,
+            string memory,
+            bool
+        );
 } // 0xc782342D667f8355869E9f5D23f245804aB10F56
 
 interface IWorkspaceRegistry {
@@ -13,13 +24,25 @@ interface IWorkspaceRegistry {
 }
 
 interface IApplicationRegistry {
-    function applications (uint96) external view returns (uint96, uint96, address, address, uint48, uint48, string, enum);
-    function walletAddressMapping(address) external view returns (address);
+    function applications(uint96)
+        external
+        view
+        returns (
+            uint96,
+            uint96,
+            address,
+            address,
+            uint48,
+            uint48,
+            string memory,
+            uint96
+        );
+
+    function walletAddressMapping(bytes32) external view returns (address);
 }
 
 contract ReviewerTransactionGuard is BaseGuard {
-    fallback() external 
-    {
+    fallback() external {
         // We don't revert on fallback to avoid issues in case of a Safe upgrade
         // E.g. The expected check method might change and then the Safe would be locked.
     }
@@ -29,22 +52,41 @@ contract ReviewerTransactionGuard is BaseGuard {
         _;
     }
 
-    address public ApplicationReviewRegistryAddress = address(); // Enter Registry Address according to the chain this contract is deployed on
-    address public ApplicationRegistryAddress = address(); // Enter Registry Address according to the chain this contract is deployed on
-    address public WorkspaceRegistryAddress = address(); // Enter Registry Address according to the chain this contract is deployed on
+    address public ApplicationReviewRegistryAddress;
+
+    IApplicationRegistry public applicationReg;
+    IApplicationReviewRegistry public applicationReviewReg;
+    IWorkspaceRegistry public workspaceReg;
+
+    address public owner;
     address public safeAddress;
     address[] public reviewers;
     uint96 public threshold;
     bytes4 public constant removeGuardBytesData = hex"e19a9dd9";
     bytes4 public constant multiSendBytesData = hex"8d80ff0a";
+
     // bytes4 public constant ENCODED_SIG_SET_GUARD = bytes4(keccak256("setGuard(address)")); // hex"e19a9dd9"
     // bytes4 public constant ENCODED_SIG_MULTI_SEND = bytes4(keccak256("")); // hex"8d80ff0a"
 
-    constructor(address _safeAddress, address[] memory _reviewers, uint96 _threshold) {
-        require(_reviewers.length >= _threshold, "Threshold can't be greater than the number of reviewers");
+    constructor(
+        address _safeAddress,
+        address[] memory _reviewers,
+        uint96 _threshold,
+        IApplicationRegistry _applicationReg,
+        IApplicationReviewRegistry _applicationReviewReg,
+        IWorkspaceRegistry _workspaceReg
+    ) {
+        require(
+            _reviewers.length >= _threshold,
+            "Threshold can't be greater than the number of reviewers"
+        );
         safeAddress = _safeAddress;
         reviewers = _reviewers;
         threshold = _threshold;
+
+        applicationReg = _applicationReg;
+        applicationReviewReg = _applicationReviewReg;
+        workspaceReg = _workspaceReg;
     }
 
     function checkTransaction(
@@ -60,62 +102,79 @@ contract ReviewerTransactionGuard is BaseGuard {
         bytes memory signatures,
         address msgSender
     ) external override {
-        
-        require(getFunctionSelector(data) != removeGuardBytesData, "This guard cannot be removed or changed!");
+        require(
+            getFunctionSelector(data) != removeGuardBytesData,
+            "This guard cannot be removed or changed!"
+        );
         // require(bytes4(data) != ENCODED_SIG_SET_GUARD, "This guard cannot be removed or changed!");
-        
+
         // Allows policy changes and rejections
-        if (to != safeAddress || to != address(this))
-        {
+        if (to != safeAddress || to != address(this)) {
             uint96 appId;
-            bytes32 applicantAddress;
+            address applicantAddress;
 
-            if(getFunctionSelector(data) == multiSendBytesData)
-            {
-                uint96 numTransfers = getApplicationId(data, 68)/217;
+            if (getFunctionSelector(data) == multiSendBytesData) {
+                uint96 numTransfers = getApplicationId(data, 68) / 217;
 
-                for(uint96 i = 0; i < numTransfers; i++)
-                {
-                    appId = getApplicationId(data, 32 + 221 + (i*217));
-                    applicantAddress = getPaymentAddress(data, 32 + 157 + (i*217));
+                for (uint96 i = 0; i < numTransfers; i++) {
+                    appId = getApplicationId(data, 32 + 221 + (i * 217));
+                    applicantAddress = getPaymentAddress(
+                        data,
+                        32 + 157 + (i * 217)
+                    );
 
                     fetchReviews(appId, applicantAddress);
                 }
-            }
-            
-            else 
-            {
+            } else {
                 appId = getApplicationId(data, 100);
-                applicantPaymentAddress = getPaymentAddress(data, 36);
-                
+                applicantAddress = getPaymentAddress(data, 36);
+
                 fetchReviews(appId, applicantAddress);
             }
         }
     }
 
-    function checkAfterExecution(bytes32 txHash, bool success) external override {
-    }
+    function checkAfterExecution(bytes32 txHash, bool success)
+        external
+        override
+    {}
 
-    function fetchReviews(uint96 _appId, address _applicantPaymentAddress) public returns (uint96 k) {
-
+    function fetchReviews(uint96 _appId, address _applicantPaymentAddress)
+        public
+        view
+    {
         address applicantWalletAddress;
-        (,,,applicantWalletAddress,,,,) = IApplicationRegistry(ApplicationRegistryAddress).applications(_appId);
-        address applicantZerowalletAddress = IApplicationRegistry(ApplicationRegistryAddress).walletAddressMapping(_applicantPaymentAddress);
-        
-        require(applicantZerowalletAddress == applicantPaymentAddress, "The proposal author, application and payment address have a mismatch");
+        (, , , applicantWalletAddress, , , , ) = applicationReg.applications(
+            _appId
+        );
+        address applicantZerowalletAddress = applicationReg
+            .walletAddressMapping(bytes32(uint256(uint160(_applicantPaymentAddress))));
+
+        require(
+            applicantZerowalletAddress == _applicantPaymentAddress,
+            "The proposal author, application and payment address have a mismatch"
+        );
 
         uint96 k = 0;
 
-        for (uint96 i = 0; i < reviewers.length; i++){
+        for (uint96 i = 0; i < reviewers.length; i++) {
             string memory metadataHash;
-            address zerowalletAddress = IWorkspaceRegistry(WorkspaceRegistryAddress).walletAddressToScwAddress(reviewers[i]);
-            (,,,,,metadataHash,) = IApplicationReviewRegistry(ApplicationReviewRegistryAddress).reviews(zerowalletAddress, _appId);
+            address zerowalletAddress = workspaceReg.walletAddressToScwAddress(
+                reviewers[i]
+            );
+            (, , , , , metadataHash, ) = applicationReviewReg.reviews(
+                zerowalletAddress,
+                _appId
+            );
             if (bytes(metadataHash).length != 0) {
                 ++k;
             }
         }
 
-        require(k >= threshold, "The threshold to take a decision on this application has not been reached yet!");
+        require(
+            k >= threshold,
+            "The threshold to take a decision on this application has not been reached yet!"
+        );
     }
 
     function addReviewer(address _address) external onlySafe {
@@ -136,19 +195,31 @@ contract ReviewerTransactionGuard is BaseGuard {
         threshold = _threshold;
     }
 
-    function getApplicationId(bytes memory data, uint256 offset) internal returns (uint96 appId) {
+    function getApplicationId(bytes memory data, uint256 offset)
+        internal
+        pure
+        returns (uint96 appId)
+    {
         assembly {
-            appId := mload(add(data, offset)) 
+            appId := mload(add(data, offset))
         }
     }
 
-    function getFunctionSelector(bytes memory data) internal returns (bytes4 sel) {
+    function getFunctionSelector(bytes memory data)
+        internal
+        pure
+        returns (bytes4 sel)
+    {
         assembly {
             sel := mload(add(data, 32))
         }
     }
 
-    function getPaymentAddress(bytes memory data, uint256 offset) internal returns (bytes32 addr) {
+    function getPaymentAddress(bytes memory data, uint256 offset)
+        internal
+        pure
+        returns (address addr)
+    {
         assembly {
             addr := mload(add(data, offset))
         }
@@ -159,8 +230,22 @@ contract ReviewerDeployer {
     ReviewerTransactionGuard[] public deployedContracts;
     uint256 public counter;
 
-    function deploy(address _safeAddress, address[] memory _reviewers, uint96 _threshold) public {
-        ReviewerTransactionGuard dc = new ReviewerTransactionGuard(_safeAddress, _reviewers, _threshold);
+    function deploy(
+        address _safeAddress,
+        address[] memory _reviewers,
+        uint96 _threshold,
+        IApplicationRegistry _applicationReg,
+        IApplicationReviewRegistry _applicationReviewReg,
+        IWorkspaceRegistry _workspaceReg
+    ) public {
+        ReviewerTransactionGuard dc = new ReviewerTransactionGuard(
+            _safeAddress,
+            _reviewers,
+            _threshold,
+            _applicationReg,
+            _applicationReviewReg,
+            _workspaceReg
+        );
         deployedContracts.push(dc);
         ++counter;
     }

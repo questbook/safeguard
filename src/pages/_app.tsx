@@ -69,13 +69,13 @@ function App({ Component, pageProps }: AppPropsWithLayout) {
 		)
 	}
 
+	const getLayout = Component.getLayout || ((page) => page)
+
 	const [hasMounted, setHasMounted] = useState(false)
 
 	useEffect(() => {
 		setHasMounted(true)
 	}, [])
-
-	const getLayout = Component.getLayout || ((page) => page)
 
 	return hasMounted ? buildComponent() : null
 }
