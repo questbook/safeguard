@@ -4,25 +4,6 @@ pragma solidity 0.8.17;
 import "@gnosis.pm/zodiac/contracts/factory/FactoryFriendly.sol";
 import "@gnosis.pm/zodiac/contracts/guard/BaseGuard.sol";
 
-interface IApplicationReviewRegistry {
-    function reviews(address, uint96)
-        external
-        view
-        returns (
-            uint96,
-            uint96,
-            uint96,
-            address,
-            address,
-            string memory,
-            bool
-        );
-} // 0xc782342D667f8355869E9f5D23f245804aB10F56
-
-interface IWorkspaceRegistry {
-    function walletAddressToScwAddress(address) external view returns (address);
-}
-
 interface IApplicationRegistry {
     function applications(uint96)
         external
@@ -41,6 +22,28 @@ interface IApplicationRegistry {
     function walletAddressMapping(bytes32) external view returns (address);
 }
 
+
+interface IApplicationReviewRegistry {
+    function reviews(address, uint96)
+        external
+        view
+        returns (
+            uint96,
+            uint96,
+            uint96,
+            address,
+            address,
+            string memory,
+            bool
+        );
+}
+
+
+interface IWorkspaceRegistry {
+    function walletAddressToScwAddress(address) external view returns (address);
+}
+
+
 contract ReviewerTransactionGuard is BaseGuard {
     fallback() external {
         // We don't revert on fallback to avoid issues in case of a Safe upgrade
@@ -52,13 +55,10 @@ contract ReviewerTransactionGuard is BaseGuard {
         _;
     }
 
-    address public ApplicationReviewRegistryAddress;
-
     IApplicationRegistry public applicationReg;
     IApplicationReviewRegistry public applicationReviewReg;
     IWorkspaceRegistry public workspaceReg;
 
-    address public owner;
     address public safeAddress;
     address[] public reviewers;
     uint96 public threshold;
@@ -87,6 +87,27 @@ contract ReviewerTransactionGuard is BaseGuard {
         applicationReg = _applicationReg;
         applicationReviewReg = _applicationReviewReg;
         workspaceReg = _workspaceReg;
+    }
+
+    function setWorkspaceReg(IWorkspaceRegistry _workspaceReg) 
+        external 
+        onlySafe 
+    {
+        workspaceReg = _workspaceReg;
+    }
+
+    function setApplicationReg(IApplicationRegistry _applicationReg) 
+        external 
+        onlySafe 
+    {
+        applicationReg = _applicationReg;
+    }
+
+    function setApplicationReviewReg(IApplicationReviewRegistry _applicationReviewReg) 
+        external 
+        onlySafe 
+    {
+        applicationReviewReg = _applicationReviewReg;
     }
 
     function checkTransaction(
@@ -151,7 +172,7 @@ contract ReviewerTransactionGuard is BaseGuard {
             .walletAddressMapping(bytes32(uint256(uint160(_applicantPaymentAddress))));
 
         require(
-            applicantZerowalletAddress == _applicantPaymentAddress,
+            applicantZerowalletAddress == applicantWalletAddress,
             "The proposal author, application and payment address have a mismatch"
         );
 
@@ -227,8 +248,16 @@ contract ReviewerTransactionGuard is BaseGuard {
 }
 
 contract ReviewerDeployer {
-    ReviewerTransactionGuard[] public deployedContracts;
     uint256 public counter;
+
+    // --- Events ---
+    /// @notice Emitted when a new guard is deployed
+    event GuardDeployed(
+        ReviewerTransactionGuard guardContract,
+        address safeAddress,
+        address[] reviewers,
+        uint96 threshold
+    );
 
     function deploy(
         address _safeAddress,
@@ -238,7 +267,7 @@ contract ReviewerDeployer {
         IApplicationReviewRegistry _applicationReviewReg,
         IWorkspaceRegistry _workspaceReg
     ) public {
-        ReviewerTransactionGuard dc = new ReviewerTransactionGuard(
+        ReviewerTransactionGuard guardContract = new ReviewerTransactionGuard(
             _safeAddress,
             _reviewers,
             _threshold,
@@ -246,7 +275,14 @@ contract ReviewerDeployer {
             _applicationReviewReg,
             _workspaceReg
         );
-        deployedContracts.push(dc);
+        
         ++counter;
+
+        emit GuardDeployed(
+            guardContract,
+            _safeAddress,
+            _reviewers,
+            _threshold
+        );
     }
 }
