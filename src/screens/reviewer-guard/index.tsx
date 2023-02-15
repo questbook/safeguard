@@ -1,18 +1,17 @@
+/* eslint-disable no-console */
 import { ReactElement, useState } from 'react'
 import { Button, Circle, Flex, IconButton, Input, Progress, Text } from '@chakra-ui/react'
+import Safe from '@safe-global/safe-core-sdk'
+import EthersAdapter from '@safe-global/safe-ethers-lib'
+import SafeServiceClient from '@safe-global/safe-service-client'
+import { ethers } from 'ethers'
+import ReviewerDeployer from 'src/abis/ReviewerDeployer.json'
+import { APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, REVIEWER_GUARD_FACTORY_CONTRACT, WORKSPACE_REGISTRY } from 'src/utils/constants'
+import { useAccount, useContract, useSigner } from 'wagmi'
 
 import { Add, Close } from '@/generated/icons'
 import NavbarLayout from '@/libraries/ui/NavbarLayout'
 import { isValidEthereumAddress } from '@/utils'
-
-import SafeServiceClient from '@safe-global/safe-service-client'
-import Safe from '@safe-global/safe-core-sdk'
-import EthersAdapter from '@safe-global/safe-ethers-lib'
-import { ethers } from 'ethers'
-
-import { useAccount, useConnect, useContract, useSigner } from 'wagmi'
-import ReviewerDeployer from "../../abis/ReviewerDeployer.json"
-import { REVIEWER_GUARD_FACTORY_CONTRACT, WORKSPACE_REGISTRY, APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY } from "../../utils/constants";
 
 function ReviewerGuard() {
 	const buildComponent = () => {
@@ -375,53 +374,55 @@ function ReviewerGuard() {
 	const [numOfReviewers, setNumOfReviewers] = useState<number>()
 
 	const [currentStep, setCurrentStep] = useState<number>(0)
-	
+
 	const { address } = useAccount()
 
-	const reviewerAddresses = []
+	const reviewerAddresses: string[] = []
 
 	const { data: signer } = useSigner({
-        chainId: 5,
-    })
+		chainId: 5,
+	})
 
 	const factoryContract = useContract({
-        address: REVIEWER_GUARD_FACTORY_CONTRACT,
-        abi: ReviewerDeployer.abi,
-        signerOrProvider: signer
-    })
+		address: REVIEWER_GUARD_FACTORY_CONTRACT,
+		abi: ReviewerDeployer.abi,
+		signerOrProvider: signer
+	})
 
-	const setGuard = async () => {
-		for (const reviewer of reviewers) {
-			reviewerAddresses.push(reviewer.address);
+	const setGuard = async() => {
+		for(const reviewer of reviewers) {
+			reviewerAddresses.push(reviewer.address)
 
-            if (reviewer.name === '' || reviewer.address === '') {
-				return;
-            }
-        }
+			if(reviewer.name === '' || reviewer.address === '') {
+				return
+			}
+		}
 
-        if (!signer || !address || !safeAddress) {
-            return
-        }
-        
+		if(!signer || !address || !safeAddress) {
+			return
+		}
+
 		console.log(address)
-        console.log(reviewerAddresses)
+		console.log(reviewerAddresses)
 		console.log(numOfReviewers)
-        
-		if (!factoryContract) return
 
-        const txn = await factoryContract.deploy(safeAddress, reviewerAddresses, numOfReviewers, APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, WORKSPACE_REGISTRY)
+		if(!factoryContract) {
+			return
+		}
+
+		const txn = await factoryContract.deploy(safeAddress, reviewerAddresses, numOfReviewers, APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, WORKSPACE_REGISTRY)
 		await txn.wait()
-		console.log("Txn: " + txn)
+		console.log('Txn: ' + txn)
 
-		let guardAddress = ""
+		let guardAddress = ''
 
 		const provider = await ethers.getDefaultProvider('goerli', { alchemy: process.env.QB_ALCHEMY_KEY })
 		console.log(process.env.QB_ALCHEMY_KEY)
-		console.log("provider", provider)
+		console.log('provider', provider)
 
 		const tx = await provider.getTransactionReceipt(txn.hash)
-		console.log("txn hash", txn.hash)
-		console.log("tx: " + tx)
+		console.log('txn hash', txn.hash)
+		console.log('tx: ' + tx)
 
 		const iface = new ethers.utils.Interface(ReviewerDeployer.abi)
 		console.log(tx)
@@ -430,55 +431,55 @@ function ReviewerGuard() {
 			for(const log of tx.logs) {
 				const event = iface.parseLog(log)
 				if(event.name === 'GuardDeployed') {
-					console.log("Event: " + event)
+					console.log('Event: ' + event)
 					guardAddress = event.args[0]
 					console.log(guardAddress)
 				}
 			}
 		} catch(e) {
-			console.log("Error")
+			console.log('Error')
 		}
-        
+
 		// while (true) {
-        //     const counter = await factoryContract.counter()
-        //     if (counter > prevCounter) {
+		//     const counter = await factoryContract.counter()
+		//     if (counter > prevCounter) {
 		// 		console.log(counter);
-        //         break;
-        //     }
-        // }
+		//         break;
+		//     }
+		// }
 
-        const ethAdapter = new EthersAdapter({
-            ethers,
-            signerOrProvider: signer,
-        })
+		const ethAdapter = new EthersAdapter({
+			ethers,
+			signerOrProvider: signer,
+		})
 
-        const service = new SafeServiceClient({
-            txServiceUrl: 'https://safe-transaction-goerli.safe.global/', // Check https://docs.safe.global/backend/available-services
-            ethAdapter
-        })
+		const service = new SafeServiceClient({
+			txServiceUrl: 'https://safe-transaction-goerli.safe.global/', // Check https://docs.safe.global/backend/available-services
+			ethAdapter
+		})
 
-        const safeSdk = await Safe.create({ ethAdapter, safeAddress })
-        console.log(await safeSdk.getGuard())
-        const safeRet = await safeSdk.createEnableGuardTx(guardAddress)
-        const safeTxHash = await safeSdk.getTransactionHash(safeRet)
-        const senderAddress = await signer.getAddress()
-        const signature = await safeSdk.signTransactionHash(safeTxHash)
+		const safeSdk = await Safe.create({ ethAdapter, safeAddress })
+		console.log(await safeSdk.getGuard())
+		const safeRet = await safeSdk.createEnableGuardTx(guardAddress)
+		const safeTxHash = await safeSdk.getTransactionHash(safeRet)
+		const senderAddress = await signer.getAddress()
+		const signature = await safeSdk.signTransactionHash(safeTxHash)
 
-        console.log('Proposed a transaction with Safe:', safeAddress)
-        console.log('- safeTxHash:', safeTxHash)
-        console.log('- senderAddress:', senderAddress)
-        console.log('- Sender signature:', signature.data)
+		console.log('Proposed a transaction with Safe:', safeAddress)
+		console.log('- safeTxHash:', safeTxHash)
+		console.log('- senderAddress:', senderAddress)
+		console.log('- Sender signature:', signature.data)
 
-        await service.proposeTransaction({
-            safeAddress,
-            safeTransactionData: safeRet.data,
-            safeTxHash,
-            senderAddress,
-            senderSignature: signature.data
-        })
+		await service.proposeTransaction({
+			safeAddress,
+			safeTransactionData: safeRet.data,
+			safeTxHash,
+			senderAddress,
+			senderSignature: signature.data
+		})
 
-        console.log(safeRet)
-    }
+		console.log(safeRet)
+	}
 
 	return buildComponent()
 }
