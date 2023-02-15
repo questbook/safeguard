@@ -143,7 +143,7 @@ contract ReviewerTransactionGuard is BaseGuard {
                     appId = getId(data, 32 + 253 + (i * 249));
                     applicantAddress = getPaymentAddress(
                         data,
-                        32 + 157 + (i * 49)
+                        32 + 157 + (i * 249)
                     );
 
                     fetchReviews(workspaceId, appId, applicantAddress);
@@ -189,7 +189,7 @@ contract ReviewerTransactionGuard is BaseGuard {
             );
             (, , , , , metadataHash, ) = applicationReviewReg.reviews(
                 zerowalletAddress,
-                _workspaceId
+                _appId
             );
             if (bytes(metadataHash).length != 0) {
                 ++k;
