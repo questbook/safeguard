@@ -19,7 +19,7 @@ interface IApplicationRegistry {
             uint96
         );
 
-    function walletAddressMapping(bytes32) external view returns (address);
+    function eoaToScw(bytes32, address) external view returns (address);
 }
 
 
