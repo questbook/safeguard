@@ -40,7 +40,7 @@ interface IApplicationReviewRegistry {
 
 
 interface IWorkspaceRegistry {
-    function walletAddressToScwAddress(address) external view returns (address);
+    function eoaToScw(address, uint96) external view returns (address);
 }
 
 
@@ -132,25 +132,28 @@ contract ReviewerTransactionGuard is BaseGuard {
         // Allows policy changes and rejections
         if (to != safeAddress || to != address(this)) {
             uint96 appId;
+            uint96 workspaceId;
             address applicantAddress;
 
             if (getFunctionSelector(data) == multiSendBytesData) {
-                uint96 numTransfers = getApplicationId(data, 68) / 217;
+                uint96 numTransfers = getId(data, 68) / 249;
 
                 for (uint96 i = 0; i < numTransfers; i++) {
-                    appId = getApplicationId(data, 32 + 221 + (i * 217));
+                    workspaceId = getId(data, 32 + 221 + (i * 249));
+                    appId = getId(data, 32 + 253 + (i * 249));
                     applicantAddress = getPaymentAddress(
                         data,
-                        32 + 157 + (i * 217)
+                        32 + 157 + (i * 49)
                     );
 
-                    fetchReviews(appId, applicantAddress);
+                    fetchReviews(workspaceId, appId, applicantAddress);
                 }
             } else {
-                appId = getApplicationId(data, 100);
+                workspaceId = getId(data, 100);
+                appId = getId(data, 132);
                 applicantAddress = getPaymentAddress(data, 36);
 
-                fetchReviews(appId, applicantAddress);
+                fetchReviews(workspaceId, appId, applicantAddress);
             }
         }
     }
@@ -160,7 +163,7 @@ contract ReviewerTransactionGuard is BaseGuard {
         override
     {}
 
-    function fetchReviews(uint96 _appId, address _applicantPaymentAddress)
+    function fetchReviews(uint96 _workspaceId, uint96 _appId, address _applicantPaymentAddress)
         public
         view
     {
@@ -180,12 +183,13 @@ contract ReviewerTransactionGuard is BaseGuard {
 
         for (uint96 i = 0; i < reviewers.length; i++) {
             string memory metadataHash;
-            address zerowalletAddress = workspaceReg.walletAddressToScwAddress(
-                reviewers[i]
+            address zerowalletAddress = workspaceReg.eoaToScw(
+                reviewers[i],
+                workspaceId
             );
             (, , , , , metadataHash, ) = applicationReviewReg.reviews(
                 zerowalletAddress,
-                _appId
+                _workspaceId
             );
             if (bytes(metadataHash).length != 0) {
                 ++k;
@@ -216,7 +220,7 @@ contract ReviewerTransactionGuard is BaseGuard {
         threshold = _threshold;
     }
 
-    function getApplicationId(bytes memory data, uint256 offset)
+    function getId(bytes memory data, uint256 offset)
         internal
         pure
         returns (uint96 appId)
@@ -244,6 +248,19 @@ contract ReviewerTransactionGuard is BaseGuard {
         assembly {
             addr := mload(add(data, offset))
         }
+    }
+
+    /// @dev Returns array of reviewers.
+    /// @return Array of Guard reviewers.
+    function getReviewers() public view returns (address[] memory) {
+        address[] memory array = new address[](reviewers.length);
+
+        // populate return array
+        for (uint256 i = 0; i < reviewers.length; i++) {
+            array[i] = reviewers[i];
+        }
+
+        return array;
     }
 }
 
