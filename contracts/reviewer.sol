@@ -133,27 +133,30 @@ contract ReviewerTransactionGuard is BaseGuard {
         if (to != safeAddress || to != address(this)) {
             uint96 appId;
             uint96 workspaceId;
+            address grantAddress;
             address applicantAddress;
 
             if (getFunctionSelector(data) == multiSendBytesData) {
-                uint96 numTransfers = getId(data, 68) / 249;
+                uint96 numTransfers = getId(data, 68) / 281;
 
                 for (uint96 i = 0; i < numTransfers; i++) {
-                    workspaceId = getId(data, 32 + 221 + (i * 249));
-                    appId = getId(data, 32 + 253 + (i * 249));
-                    applicantAddress = getPaymentAddress(
+                    workspaceId = getId(data, 32 + 221 + (i * 281));
+                    grantAddress = getAddress(data, 32 + 253 + (i * 281));
+                    appId = getId(data, 32 + 285 + (i * 281));
+                    applicantAddress = getAddress(
                         data,
-                        32 + 157 + (i * 249)
+                        32 + 157 + (i * 281)
                     );
 
-                    fetchReviews(workspaceId, appId, applicantAddress);
+                    fetchReviews(workspaceId, appId, grantAddress, applicantAddress);
                 }
             } else {
                 workspaceId = getId(data, 100);
-                appId = getId(data, 132);
-                applicantAddress = getPaymentAddress(data, 36);
+                grantAddress = getAddress(data, 132);
+                appId = getId(data, 164);
+                applicantAddress = getAddress(data, 36);
 
-                fetchReviews(workspaceId, appId, applicantAddress);
+                fetchReviews(workspaceId, appId, grantAddress, applicantAddress);
             }
         }
     }
@@ -163,7 +166,7 @@ contract ReviewerTransactionGuard is BaseGuard {
         override
     {}
 
-    function fetchReviews(uint96 _workspaceId, uint96 _appId, address _applicantPaymentAddress)
+    function fetchReviews(uint96 _workspaceId, uint96 _appId, address grantAddress, address _applicantPaymentAddress)
         public
         view
     {
@@ -172,7 +175,7 @@ contract ReviewerTransactionGuard is BaseGuard {
             _appId
         );
         address applicantZerowalletAddress = applicationReg
-            .walletAddressMapping(bytes32(uint256(uint160(_applicantPaymentAddress))));
+            .eoaToScw(bytes32(uint256(uint160(_applicantPaymentAddress))), grantAddress);
 
         require(
             applicantZerowalletAddress == applicantWalletAddress,
@@ -240,7 +243,7 @@ contract ReviewerTransactionGuard is BaseGuard {
         }
     }
 
-    function getPaymentAddress(bytes memory data, uint256 offset)
+    function getAddress(bytes memory data, uint256 offset)
         internal
         pure
         returns (address addr)
