@@ -129,7 +129,7 @@ function Home() {
 							return (
 								<GridItem
 									key={index}
-									colSpan={index === 0 || index === 3 ? 3 : 2}>
+									colSpan={ Math.floor(index / 2) % 2 === 0 ? (index % 2 === 0 ? 3 : 2) : (index % 2 === 0 ? 2 : 3)}>
 									<Flex
 										p='2rem'
 										bg={guard.isActive ? 'white' : 'gray.200'}
@@ -291,21 +291,35 @@ function Home() {
 		{
 			title: 'Compliance Guard',
 			description: 'Abort transaction if the address belongs to a blacklist',
-			icon: 'Hands_Access_Allowed.svg',
+			icon: 'Fitz Report.svg',
 			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
 			title: 'Gas Saving Guard',
 			description: 'Abort transaction if the gas price is beyond a limit',
-			icon: 'Hands_Access_Allowed.svg',
+			icon: 'Go Green Electricity Power.svg',
+			isActive: false,
+			onMoreClick: () => {}
+		},
+		{
+			title: 'Milestone Payout Guard',
+			description: 'Abort transaction if the milestones are marked as not done by milestone reviewers',
+			icon: 'Fitz Location.svg',
 			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
 			title: 'Due Dilligence Guard',
 			description: 'Choose rubrics for your diligence. Abort transaction if rubric scores aren\'t met by the reviewers',
-			icon: 'Brazuca_Sucess.svg',
+			icon: 'Isometric Stickers Magnifying Glass.svg',
+			isActive: false,
+			onMoreClick: () => {}
+		},
+		{
+			title: 'Want a custom guard?',
+			description: 'Reach out to our team with your request.',
+			icon: 'Isometric Stickers Chat.svg',
 			isActive: false,
 			onMoreClick: () => {}
 		}

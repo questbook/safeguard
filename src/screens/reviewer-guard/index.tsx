@@ -121,6 +121,7 @@ function ReviewerGuard() {
 						py='1rem'>
 						<Button
 							variant='primary'
+							isLoading={isDeploying}
 							isDisabled={currentStep < 2}
 							onClick={setGuard}>
 							Set Guard
@@ -374,6 +375,7 @@ function ReviewerGuard() {
 	const [numOfReviewers, setNumOfReviewers] = useState<number>()
 
 	const [currentStep, setCurrentStep] = useState<number>(0)
+	const [isDeploying, setIsDeploying] = useState<boolean>(false)
 
 	const { address } = useAccount()
 
@@ -409,6 +411,8 @@ function ReviewerGuard() {
 		if(!factoryContract) {
 			return
 		}
+
+		setIsDeploying(true)
 
 		const txn = await factoryContract.deploy(safeAddress, reviewerAddresses, numOfReviewers, APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, WORKSPACE_REGISTRY)
 		await txn.wait()
@@ -479,6 +483,7 @@ function ReviewerGuard() {
 		})
 
 		console.log(safeRet)
+		setIsDeploying(false)
 	}
 
 	return buildComponent()
