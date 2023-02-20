@@ -526,8 +526,8 @@ function ReviewerGuard() {
 				}
 			}
 
-			if(!signer || !address || !safeAddress) {
-				console.log({ signer, address, safeAddress })
+			if(!signer || !address || !safeAddress || !chain?.id) {
+				console.log({ signer, address, safeAddress, chainId: chain?.id })
 				return
 			}
 
@@ -567,9 +567,9 @@ function ReviewerGuard() {
 					safeAddress,
 					reviewers.map((r) => r.address),
 					numOfReviewers,
-					CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REGISTRY,
-					CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REVIEW_REGISTRY,
-					CHAIN_INFO[chain?.id ?? defaultChainId].WORKSPACE_REGISTRY,
+					CHAIN_INFO[chain.id].APPLICATION_REGISTRY,
+					CHAIN_INFO[chain.id].APPLICATION_REVIEW_REGISTRY,
+					CHAIN_INFO[chain.id].WORKSPACE_REGISTRY,
 				)
 				await txn.wait()
 				console.log('Txn: ' + txn)
@@ -596,7 +596,7 @@ function ReviewerGuard() {
 
 				console.log(guardAddress)
 				localStorage.setItem(
-					`reviewer-guard-${address}-${chain?.id}`,
+					`reviewer-guard-${address}-${chain.id}`,
 					JSON.stringify({
 						safeAddress: safeAddress,
 						guard: guardAddress,
@@ -629,7 +629,7 @@ function ReviewerGuard() {
 			console.log('- Sender signature:', signature.data)
 
 			const service = new SafeServiceClient({
-				txServiceUrl: CHAIN_INFO[chain?.id ?? defaultChainId].safeTxServiceURL, // Check https://docs.safe.global/backend/available-services
+				txServiceUrl: CHAIN_INFO[chain.id].safeTxServiceURL, // Check https://docs.safe.global/backend/available-services
 				ethAdapter,
 			})
 
