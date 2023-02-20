@@ -19,6 +19,7 @@ const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElem
 		)
 	}
 
+	// const { address } = useAccount()
 	const { isConnected } = useAccount()
 	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
@@ -27,6 +28,21 @@ const ConnectWalletProvider = ({ children }: {children: ReactElement | ReactElem
 			setIsModalOpen(false)
 		}
 	}, [isConnected])
+
+	// useEffect(() => {
+	// 	if(address) {
+	// 		const deployedGuardsString = localStorage.getItem('deployedGuards')
+	// 		if(!deployedGuardsString) {
+	// 			const map: {[key: string]: unknown} = {}
+	// 			map[address] = {}
+	// 			localStorage.setItem('deployedGuards', JSON.stringify(map))
+	// 		} else if(!JSON.parse(deployedGuardsString)[address]) {
+	// 			const json = JSON.parse(deployedGuardsString)
+	// 			json[address] = {}
+	// 			localStorage.setItem('deployedGuards', JSON.stringify(json))
+	// 		}
+	// 	}
+	// }, [address])
 
 	return context()
 }
