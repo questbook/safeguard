@@ -627,7 +627,7 @@ function ReviewerGuard() {
 		console.log('- Sender signature:', signature.data)
 
 		const service = new SafeServiceClient({
-			txServiceUrl: 'https://safe-transaction-goerli.safe.global/', // Check https://docs.safe.global/backend/available-services
+			txServiceUrl: CHAIN_INFO[chain?.id ?? defaultChainId].safeTxServiceURL, // Check https://docs.safe.global/backend/available-services
 			ethAdapter,
 		})
 
