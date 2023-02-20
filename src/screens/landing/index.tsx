@@ -127,7 +127,7 @@ function Home() {
 					mt='4rem'>
 					{
 						guards.map((guard, index) => {
-							const isActive = address !== undefined && chain !== undefined ? localStorage.getItem(`${guard.type}-${address}-${chain.id}`) : false
+							const isActive = address !== undefined && chain !== undefined ? localStorage.getItem(`${guard.type}-${address}-${chain.id}`) !== undefined : false
 							return (
 								<GridItem
 									key={index}
@@ -178,7 +178,7 @@ function Home() {
 														<Button
 															mt='1rem'
 															variant='primary'
-															onClick={guard.onMoreClick}>
+															onClick={() => guard.onMoreClick(isActive)}>
 															Edit Guard
 														</Button>
 													)
@@ -198,7 +198,7 @@ function Home() {
 													color='black'
 													variant='link'
 													rightIcon={<Image src='Arrow-right.svg' />}
-													onClick={guard.onMoreClick}
+													onClick={() => guard.onMoreClick(isActive)}
 												>
 													More about this guard
 												</Button>
@@ -304,8 +304,8 @@ function Home() {
 			title: 'Reviewer Guard',
 			description: 'Abort transaction if M out N reviews haven\'t been submitted by grant reviewers',
 			icon: 'Brazuca_Sucess.svg',
-			onMoreClick: () => {
-				router.push({ pathname: '/reviewer_guard' })
+			onMoreClick: (isActive: boolean) => {
+				router.push({ pathname: '/reviewer_guard', query: isActive ? { edit: true } : {} })
 			}
 		},
 		{

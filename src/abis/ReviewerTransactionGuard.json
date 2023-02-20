@@ -40,19 +40,6 @@
     "type": "fallback"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
-      }
-    ],
-    "name": "addReviewer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "applicationReg",
     "outputs": [
@@ -229,19 +216,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
-      }
-    ],
-    "name": "removeReviewer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
@@ -300,19 +274,6 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_reviewers",
-        "type": "address[]"
-      }
-    ],
-    "name": "setReviewers",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "contract IWorkspaceRegistry",
         "name": "_workspaceReg",
         "type": "address"
@@ -358,12 +319,17 @@
   {
     "inputs": [
       {
+        "internalType": "address[]",
+        "name": "_reviewers",
+        "type": "address[]"
+      },
+      {
         "internalType": "uint96",
         "name": "_threshold",
         "type": "uint96"
       }
     ],
-    "name": "updateThreshold",
+    "name": "updateConfig",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
