@@ -478,22 +478,26 @@ function ReviewerGuard() {
 	const { edit } = router.query
 
 	const getGuardConfig = async() => {
-		if(!guardContract) {
+		if(!guardContract || edit !== undefined || guardAddress === ethers.constants.AddressZero) {
 			return
 		}
 
-		const reviewers: string[] = await guardContract.getReviewers()
-		const threshold: BigNumber = await guardContract.threshold()
-		localStorage.setItem(
-			`reviewer-guard-${address}-${chain?.id}`,
-			JSON.stringify({
-				safeAddress,
-				guard: guardContract.address,
-				reviewers: reviewers.map((r) => ({ name: '', address: r })),
-				threshold: threshold.toNumber(),
-			}),
-		)
-		setIsDeploying(false)
+		try {
+			const reviewers: string[] = await guardContract.getReviewers()
+			const threshold: BigNumber = await guardContract.threshold()
+			localStorage.setItem(
+				`reviewer-guard-${address}-${chain?.id}`,
+				JSON.stringify({
+					safeAddress,
+					guard: guardContract.address,
+					reviewers: reviewers.map((r) => ({ name: '', address: r })),
+					threshold: threshold.toNumber(),
+				}),
+			)
+			setIsDeploying(false)
+		} catch(e) {
+
+		}
 	}
 
 	useEffect(() => {
