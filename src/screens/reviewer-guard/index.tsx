@@ -1,15 +1,16 @@
 /* eslint-disable no-console */
-import { ReactElement, useState } from 'react'
-import { Button, Circle, Flex, IconButton, Input, Progress, Text } from '@chakra-ui/react'
+import { ReactElement, useEffect, useState } from 'react'
+import { Button, Circle, Flex, IconButton, Input, Menu, MenuButton, MenuItem, MenuList, Progress, Text, Tooltip, useToast } from '@chakra-ui/react'
 import Safe from '@safe-global/safe-core-sdk'
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import SafeServiceClient from '@safe-global/safe-service-client'
 import { ethers } from 'ethers'
 import ReviewerDeployer from 'src/abis/ReviewerDeployer.json'
-import { APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, REVIEWER_GUARD_FACTORY_CONTRACT, WORKSPACE_REGISTRY } from 'src/utils/constants'
-import { useAccount, useContract, useSigner } from 'wagmi'
+import ReviewerTransactionGuard from 'src/abis/ReviewerTransactionGuard.json'
+import { CHAIN_INFO, defaultChainId } from 'src/utils/constants'
+import { useAccount, useContract, useNetwork, useProvider, useSigner } from 'wagmi'
 
-import { Add, Close } from '@/generated/icons'
+import { AddPerson, ChevronDown, Close } from '@/generated/icons'
 import NavbarLayout from '@/libraries/ui/NavbarLayout'
 import { isValidEthereumAddress } from '@/utils'
 
@@ -119,13 +120,18 @@ function ReviewerGuard() {
 						justify='end'
 						px='4rem'
 						py='1rem'>
-						<Button
-							variant='primary'
-							isLoading={isDeploying}
-							isDisabled={currentStep < 2}
-							onClick={setGuard}>
-							Set Guard
-						</Button>
+						<Tooltip
+							label={(!chain?.id || !(chain?.id in CHAIN_INFO)) ? 'Please switch your wallet&apos;s chain to Goerli or Optimism Mainnet' : ''}
+							shouldWrapChildren>
+							<Button
+								variant='primary'
+								isLoading={isDeploying}
+								isDisabled={currentStep < 2 || !chain?.id || !(chain?.id in CHAIN_INFO)}
+								onClick={setGuard}>
+								Set Guard
+							</Button>
+						</Tooltip>
+
 					</Flex>
 				</Flex>
 			</Flex>
@@ -233,10 +239,9 @@ function ReviewerGuard() {
 									align='start'
 									justify='space-between'>
 									<Input
-										variant='flushed'
 										flex={1}
 										placeholder='Name'
-										borderBottom='1px solid #CEC9BD'
+										border='1px solid #CEC9BD'
 										value={reviewer.name}
 										onChange={
 											(e) => {
@@ -246,10 +251,9 @@ function ReviewerGuard() {
 											}
 										} />
 									<Input
-										variant='flushed'
 										flex={2}
 										placeholder='Wallet Address'
-										borderBottom='1px solid #CEC9BD'
+										border='1px solid #CEC9BD'
 										value={reviewer.address}
 										onChange={
 											(e) => {
@@ -257,7 +261,7 @@ function ReviewerGuard() {
 												copy[index].address = e.target.value
 												setReviewers(copy)
 											}
-										}	 />
+										} />
 									<IconButton
 										ml='0.5rem'
 										aria-label={`remove-${index}`}
@@ -281,14 +285,14 @@ function ReviewerGuard() {
 						justify='space-between'>
 						<Button
 							variant='link'
-							leftIcon={<Add color='black.100' />}
+							leftIcon={<AddPerson color='black.100' />}
 							onClick={
 								() => {
 									setReviewers([...reviewers, { name: '', address: '' }])
 								}
 							}>
 							<Text fontWeight='500'>
-								Add Another
+								Add new reviewer
 							</Text>
 
 						</Button>
@@ -332,24 +336,36 @@ function ReviewerGuard() {
 					<Flex
 						align='flex-end'
 						mt='2.5rem'>
-						<Input
-							variant='flushed'
-							w='3ch'
-							placeholder={reviewers.length.toString()}
-							borderBottom='1px solid #CEC9BD'
-							type='number'
-							value={numOfReviewers ?? ''}
-							textAlign='center'
-							onChange={
-								(e) => {
-									const val = parseInt(e.target.value)
-									if(val < 1 || val > reviewers.length) {
-										return
-									}
+						<Menu>
+							<MenuButton
+							>
+								<Flex
+									border='1px solid #CEC9BD'
+									borderRadius='0.5rem'
+									p='0.75rem'
+									gap='0.5rem'
+									align='center'>
+									<Text>
+										{numOfReviewers}
+									</Text>
+									<ChevronDown boxSize='0.75rem' />
+								</Flex>
 
-									setNumOfReviewers(val)
+							</MenuButton>
+							<MenuList>
+								{
+									reviewers.map((r, index) => {
+										return (
+											<MenuItem
+												key={r.address}
+												onClick={() => setNumOfReviewers(index + 1)}>
+												{index + 1}
+											</MenuItem>
+										)
+									})
 								}
-							} />
+							</MenuList>
+						</Menu>
 						<Text
 							variant='body'
 							ml='1rem'
@@ -371,64 +387,117 @@ function ReviewerGuard() {
 	const steps = [{ title: 'Safe address', item: safeAddressStep }, { title: 'Set reviewers', item: setReviewersStep }, { title: 'Set number of reviews required', item: setNumberOfReviewsRequiredStep }]
 
 	const [safeAddress, setSafeAddress] = useState<string>('')
-	const [reviewers, setReviewers] = useState<{name: string, address: string}[]>([{ name: '', address: '' }])
-	const [numOfReviewers, setNumOfReviewers] = useState<number>()
+	const [reviewers, setReviewers] = useState<{ name: string, address: string }[]>([{ name: '', address: '' }])
+	const [numOfReviewers, setNumOfReviewers] = useState<number>(1)
+
+	const [guardAddress, setGuardAddress] = useState<string>('')
 
 	const [currentStep, setCurrentStep] = useState<number>(0)
 	const [isDeploying, setIsDeploying] = useState<boolean>(false)
 
 	const { address } = useAccount()
 
-	const reviewerAddresses: string[] = []
+	const { chain } = useNetwork()
+	const toast = useToast()
 
 	const { data: signer } = useSigner({
-		chainId: 5,
+		chainId: chain?.id,
 	})
 
+	const provider = useProvider()
+
 	const factoryContract = useContract({
-		address: REVIEWER_GUARD_FACTORY_CONTRACT,
-		abi: ReviewerDeployer.abi,
+		address: CHAIN_INFO[chain?.id ?? defaultChainId].REVIEWER_GUARD_FACTORY_CONTRACT,
+		abi: ReviewerDeployer,
 		signerOrProvider: signer
 	})
 
+	const guardContract = useContract({
+		address: guardAddress,
+		abi: ReviewerTransactionGuard,
+		signerOrProvider: provider,
+	})
+
+	const getGuardConfig = async() => {
+		if(!guardContract) {
+			return
+		}
+
+		const reviewers: string[] = await guardContract.getReviewers()
+		const threshold: number = await guardContract.threshold()
+		localStorage.setItem(`reviewer-guard-${address}-${chain?.id}`, JSON.stringify({ safeAddress: safeAddress, guard: guardContract, reviewers: reviewers.map(r => ({ name: '', address: r })), threshold }))
+		setIsDeploying(false)
+	}
+
+	useEffect(() => {
+		console.log(guardContract)
+		if(guardContract) {
+			getGuardConfig()
+		}
+	}, [guardContract])
+
+	useEffect(() => {
+		const s = localStorage.getItem(`reviewer-guard-${address}-${chain?.id}`)
+		if(s) {
+			const json = JSON.parse(s)
+			setSafeAddress(json['safeAddress'])
+			setReviewers(json['reviewers'])
+			setNumOfReviewers(json['threshold'])
+			setIsDeploying(false)
+		}
+	}, [address, chain])
+
 	const setGuard = async() => {
 		for(const reviewer of reviewers) {
-			reviewerAddresses.push(reviewer.address)
-
 			if(reviewer.name === '' || reviewer.address === '') {
 				return
 			}
 		}
 
 		if(!signer || !address || !safeAddress) {
+			console.log({ signer, address, safeAddress })
 			return
 		}
 
 		console.log(address)
-		console.log(reviewerAddresses)
+		console.log(reviewers.map(r => r.address))
 		console.log(numOfReviewers)
 
 		if(!factoryContract) {
+			console.log('No factory contract')
 			return
 		}
 
 		setIsDeploying(true)
 
-		const txn = await factoryContract.deploy(safeAddress, reviewerAddresses, numOfReviewers, APPLICATION_REGISTRY, APPLICATION_REVIEW_REGISTRY, WORKSPACE_REGISTRY)
+		const ethAdapter = new EthersAdapter({
+			ethers,
+			signerOrProvider: signer,
+		})
+
+		const safeSdk = await Safe.create({ ethAdapter, safeAddress })
+		let guardAddress = await safeSdk.getGuard()
+
+		if(guardAddress !== ethers.constants.AddressZero) {
+			setGuardAddress(guardAddress)
+			toast({
+				title: 'Safe already has an attached guard!',
+				status: 'error',
+				duration: 5000,
+			})
+
+			return
+		}
+
+		const txn = await factoryContract.deploy(safeAddress, reviewers.map(r => r.address), numOfReviewers, CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REGISTRY, CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REVIEW_REGISTRY, CHAIN_INFO[chain?.id ?? defaultChainId].WORKSPACE_REGISTRY)
 		await txn.wait()
 		console.log('Txn: ' + txn)
-
-		let guardAddress = ''
-
-		const provider = await ethers.getDefaultProvider('goerli', { alchemy: process.env.QB_ALCHEMY_KEY })
-		console.log(process.env.QB_ALCHEMY_KEY)
-		console.log('provider', provider)
 
 		const tx = await provider.getTransactionReceipt(txn.hash)
 		console.log('txn hash', txn.hash)
 		console.log('tx: ' + tx)
 
-		const iface = new ethers.utils.Interface(ReviewerDeployer.abi)
+		const iface = new ethers.utils.Interface(ReviewerDeployer)
 		console.log(tx)
 
 		try {
@@ -444,26 +513,13 @@ function ReviewerGuard() {
 			console.log('Error')
 		}
 
-		// while (true) {
-		//     const counter = await factoryContract.counter()
-		//     if (counter > prevCounter) {
-		// 		console.log(counter);
-		//         break;
-		//     }
-		// }
-
-		const ethAdapter = new EthersAdapter({
-			ethers,
-			signerOrProvider: signer,
-		})
-
 		const service = new SafeServiceClient({
 			txServiceUrl: 'https://safe-transaction-goerli.safe.global/', // Check https://docs.safe.global/backend/available-services
 			ethAdapter
 		})
 
-		const safeSdk = await Safe.create({ ethAdapter, safeAddress })
-		console.log(await safeSdk.getGuard())
+		console.log(guardAddress)
+		localStorage.setItem(`reviewer-guard-${address}-${chain?.id}`, JSON.stringify({ safeAddress: safeAddress, guard: guardAddress, reviewers, threshold: numOfReviewers }))
 		const safeRet = await safeSdk.createEnableGuardTx(guardAddress)
 		const safeTxHash = await safeSdk.getTransactionHash(safeRet)
 		const senderAddress = await signer.getAddress()
@@ -480,6 +536,12 @@ function ReviewerGuard() {
 			safeTxHash,
 			senderAddress,
 			senderSignature: signature.data
+		})
+
+		toast({
+			title: 'Please open your safe to set the guard',
+			status: 'success',
+			duration: 5000,
 		})
 
 		console.log(safeRet)

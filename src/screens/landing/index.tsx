@@ -11,6 +11,7 @@ import {
 	VStack,
 } from '@chakra-ui/react'
 import { useRouter } from 'next/router'
+import { useAccount, useNetwork } from 'wagmi'
 
 import NavbarLayout from '@/libraries/ui/NavbarLayout'
 import { ButtonComponent } from '@/screens/landing/_components/ButtonComponent'
@@ -126,13 +127,14 @@ function Home() {
 					mt='4rem'>
 					{
 						guards.map((guard, index) => {
+							const isActive = address !== undefined && chain !== undefined ? localStorage.getItem(`${guard.type}-${address}-${chain.id}`) : false
 							return (
 								<GridItem
 									key={index}
 									colSpan={ Math.floor(index / 2) % 2 === 0 ? (index % 2 === 0 ? 3 : 2) : (index % 2 === 0 ? 2 : 3)}>
 									<Flex
 										p='2rem'
-										bg={guard.isActive ? 'white' : 'gray.200'}
+										bg={isActive ? 'white' : 'gray.200'}
 										direction='column'
 										borderRadius='0.5rem'
 										align='start'
@@ -140,14 +142,14 @@ function Home() {
 									>
 										<Text
 											fontWeight='700'
-											color={guard.isActive ? 'green.500' : 'black.300'}>
-											{guard.isActive ? 'ACTIVE' : 'COMING SOON'}
+											color={isActive ? 'green.500' : 'black.300'}>
+											{isActive ? 'INSTALLED' : 'COMING SOON'}
 										</Text>
 										<Flex
 											w='100%'
 											justify='space-between'
 											align='start'
-											h='100%'
+											h={isActive ? 'auto' : '100%'}
 										>
 											<Flex
 												direction='column'
@@ -164,9 +166,23 @@ function Home() {
 													fontWeight='700'>
 													{guard.title.substring(guard.title.lastIndexOf(' ') + 1)}
 												</Text>
-												<Text mt='1rem'>
-													{guard.description}
-												</Text>
+												{
+													!isActive && (
+														<Text mt='1rem'>
+															{guard.description}
+														</Text>
+													)
+												}
+												{
+													isActive && (
+														<Button
+															mt='1rem'
+															variant='primary'
+															onClick={guard.onMoreClick}>
+															Edit Guard
+														</Button>
+													)
+												}
 											</Flex>
 
 											{/* <Flex > */}
@@ -175,15 +191,19 @@ function Home() {
 
 										</Flex>
 
-										<Button
-											mt='0.5rem'
-											color='black'
-											variant='link'
-											rightIcon={<Image src='Arrow-right.svg' />}
-											onClick={guard.onMoreClick}
-										>
-											More about this guard
-										</Button>
+										{
+											!isActive && (
+												<Button
+													mt='0.5rem'
+													color='black'
+													variant='link'
+													rightIcon={<Image src='Arrow-right.svg' />}
+													onClick={guard.onMoreClick}
+												>
+													More about this guard
+												</Button>
+											)
+										}
 									</Flex>
 								</GridItem>
 							)
@@ -280,51 +300,53 @@ function Home() {
 
 	const guards = [
 		{
+			type: 'reviewer-guard',
 			title: 'Reviewer Guard',
 			description: 'Abort transaction if M out N reviews haven\'t been submitted by grant reviewers',
 			icon: 'Brazuca_Sucess.svg',
-			isActive: true,
 			onMoreClick: () => {
 				router.push({ pathname: '/reviewer_guard' })
 			}
 		},
 		{
+			type: 'compliance-guard',
 			title: 'Compliance Guard',
 			description: 'Abort transaction if the address belongs to a blacklist',
 			icon: 'Fitz Report.svg',
-			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
+			type: 'gas-saving-guard',
 			title: 'Gas Saving Guard',
 			description: 'Abort transaction if the gas price is beyond a limit',
 			icon: 'Go Green Electricity Power.svg',
-			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
+			type: 'milestone-payout-guard',
 			title: 'Milestone Payout Guard',
 			description: 'Abort transaction if the milestones are marked as not done by milestone reviewers',
 			icon: 'Fitz Location.svg',
-			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
+			type: 'due-dilligence-guard',
 			title: 'Due Dilligence Guard',
 			description: 'Choose rubrics for your diligence. Abort transaction if rubric scores aren\'t met by the reviewers',
 			icon: 'Isometric Stickers Magnifying Glass.svg',
-			isActive: false,
 			onMoreClick: () => {}
 		},
 		{
+			type: 'custom-guard',
 			title: 'Want a custom guard?',
 			description: 'Reach out to our team with your request.',
 			icon: 'Isometric Stickers Chat.svg',
-			isActive: false,
 			onMoreClick: () => {}
 		}
 	]
 
+	const { address } = useAccount()
+	const { chain } = useNetwork()
 
 	return buildComponent()
 }
