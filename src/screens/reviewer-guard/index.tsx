@@ -19,7 +19,7 @@ import Safe from '@safe-global/safe-core-sdk'
 import { SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import SafeServiceClient from '@safe-global/safe-service-client'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { useRouter } from 'next/router'
 import ReviewerDeployer from 'src/abis/ReviewerDeployer.json'
 import ReviewerTransactionGuard from 'src/abis/ReviewerTransactionGuard.json'
@@ -483,14 +483,14 @@ function ReviewerGuard() {
 		}
 
 		const reviewers: string[] = await guardContract.getReviewers()
-		const threshold: number = await guardContract.threshold()
+		const threshold: BigNumber = await guardContract.threshold()
 		localStorage.setItem(
 			`reviewer-guard-${address}-${chain?.id}`,
 			JSON.stringify({
-				safeAddress: safeAddress,
-				guard: guardContract,
+				safeAddress,
+				guard: guardContract.address,
 				reviewers: reviewers.map((r) => ({ name: '', address: r })),
-				threshold,
+				threshold: threshold.toNumber(),
 			}),
 		)
 		setIsDeploying(false)
@@ -498,7 +498,7 @@ function ReviewerGuard() {
 
 	useEffect(() => {
 		console.log(guardContract)
-		if(guardContract) {
+		if(guardContract && edit === undefined && guardAddress === ethers.constants.AddressZero) {
 			getGuardConfig()
 		}
 	}, [guardContract])
@@ -515,138 +515,144 @@ function ReviewerGuard() {
 	}, [address, chain])
 
 	const setGuard = async() => {
-		for(const reviewer of reviewers) {
-			if(reviewer.name === '' || reviewer.address === '') {
+		try {
+			for(const reviewer of reviewers) {
+				if(reviewer.name === '' || reviewer.address === '') {
+					return
+				}
+			}
+
+			if(!signer || !address || !safeAddress) {
+				console.log({ signer, address, safeAddress })
 				return
 			}
-		}
 
-		if(!signer || !address || !safeAddress) {
-			console.log({ signer, address, safeAddress })
-			return
-		}
+			console.log(address)
+			console.log(reviewers.map((r) => r.address))
+			console.log(numOfReviewers)
 
-		console.log(address)
-		console.log(reviewers.map((r) => r.address))
-		console.log(numOfReviewers)
+			if(!factoryContract) {
+				console.log('No factory contract')
+				return
+			}
 
-		if(!factoryContract) {
-			console.log('No factory contract')
-			return
-		}
+			setIsDeploying(true)
 
-		setIsDeploying(true)
+			const ethAdapter = new EthersAdapter({
+				ethers,
+				signerOrProvider: signer,
+			})
 
-		const ethAdapter = new EthersAdapter({
-			ethers,
-			signerOrProvider: signer,
-		})
-
-		const safeSdk = await Safe.create({ ethAdapter, safeAddress })
-		let guardAddress = await safeSdk.getGuard()
-
-		if(guardAddress !== ethers.constants.AddressZero) {
+			const safeSdk = await Safe.create({ ethAdapter, safeAddress })
+			let guardAddress = await safeSdk.getGuard()
 			setGuardAddress(guardAddress)
+
+			if(guardAddress !== ethers.constants.AddressZero && edit === undefined) {
+				toast({
+					title: 'Safe already has an attached guard!',
+					status: 'error',
+					duration: 5000,
+				})
+
+				return
+			}
+
+			let safeTx: SafeTransaction
+			if(edit === undefined) {
+				const txn = await factoryContract.deploy(
+					safeAddress,
+					reviewers.map((r) => r.address),
+					numOfReviewers,
+					CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REGISTRY,
+					CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REVIEW_REGISTRY,
+					CHAIN_INFO[chain?.id ?? defaultChainId].WORKSPACE_REGISTRY,
+				)
+				await txn.wait()
+				console.log('Txn: ' + txn)
+
+				const tx = await provider.getTransactionReceipt(txn.hash)
+				console.log('txn hash', txn.hash)
+				console.log('tx: ' + tx)
+
+				const iface = new ethers.utils.Interface(ReviewerDeployer)
+				console.log(tx)
+
+				try {
+					for(const log of tx.logs) {
+						const event = iface.parseLog(log)
+						if(event.name === 'GuardDeployed') {
+							console.log('Event: ' + event)
+							guardAddress = event.args[0]
+							console.log(guardAddress)
+						}
+					}
+				} catch(e) {
+					console.log('Error')
+				}
+
+				console.log(guardAddress)
+				localStorage.setItem(
+					`reviewer-guard-${address}-${chain?.id}`,
+					JSON.stringify({
+						safeAddress: safeAddress,
+						guard: guardAddress,
+						reviewers,
+						threshold: numOfReviewers,
+					}),
+				)
+				safeTx = await safeSdk.createEnableGuardTx(guardAddress)
+			} else {
+				const iface = new ethers.utils.Interface(ReviewerTransactionGuard)
+				safeTx = await safeSdk.createTransaction({
+					safeTransactionData: {
+						to: guardAddress,
+						data: iface.encodeFunctionData('updateConfig', [
+							reviewers.map((r) => r.address),
+							numOfReviewers,
+						]),
+						value: '0',
+					},
+				})
+			}
+
+			const safeTxHash = await safeSdk.getTransactionHash(safeTx)
+			const senderAddress = await signer.getAddress()
+			const signature = await safeSdk.signTransactionHash(safeTxHash)
+
+			console.log('Proposed a transaction with Safe:', safeAddress)
+			console.log('- safeTxHash:', safeTxHash)
+			console.log('- senderAddress:', senderAddress)
+			console.log('- Sender signature:', signature.data)
+
+			const service = new SafeServiceClient({
+				txServiceUrl: CHAIN_INFO[chain?.id ?? defaultChainId].safeTxServiceURL, // Check https://docs.safe.global/backend/available-services
+				ethAdapter,
+			})
+
+			await service.proposeTransaction({
+				safeAddress,
+				safeTransactionData: safeTx.data,
+				safeTxHash,
+				senderAddress,
+				senderSignature: signature.data,
+			})
+
 			toast({
-				title: 'Safe already has an attached guard!',
-				status: 'error',
+				title: 'Please open your safe to set the guard',
+				status: 'success',
 				duration: 5000,
 			})
 
-			return
-		}
-
-		let safeTx: SafeTransaction
-		if(edit === undefined) {
-			const txn = await factoryContract.deploy(
-				safeAddress,
-				reviewers.map((r) => r.address),
-				numOfReviewers,
-				CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REGISTRY,
-				CHAIN_INFO[chain?.id ?? defaultChainId].APPLICATION_REVIEW_REGISTRY,
-				CHAIN_INFO[chain?.id ?? defaultChainId].WORKSPACE_REGISTRY,
-			)
-			await txn.wait()
-			console.log('Txn: ' + txn)
-
-			const tx = await provider.getTransactionReceipt(txn.hash)
-			console.log('txn hash', txn.hash)
-			console.log('tx: ' + tx)
-
-			const iface = new ethers.utils.Interface(ReviewerDeployer)
-			console.log(tx)
-
-			try {
-				for(const log of tx.logs) {
-					const event = iface.parseLog(log)
-					if(event.name === 'GuardDeployed') {
-						console.log('Event: ' + event)
-						guardAddress = event.args[0]
-						console.log(guardAddress)
-					}
-				}
-			} catch(e) {
-				console.log('Error')
-			}
-
-			console.log(guardAddress)
-			localStorage.setItem(
-				`reviewer-guard-${address}-${chain?.id}`,
-				JSON.stringify({
-					safeAddress: safeAddress,
-					guard: guardAddress,
-					reviewers,
-					threshold: numOfReviewers,
-				}),
-			)
-			safeTx = await safeSdk.createEnableGuardTx(guardAddress)
-		} else {
-			if(!guardContract) {
-				return
-			}
-
-			safeTx = await safeSdk.createTransaction({
-				safeTransactionData: {
-					to: guardContract.address,
-					data: guardContract.interface.encodeFunctionData('updateConfig', [
-						reviewers.map((r) => r.address),
-						numOfReviewers,
-					]),
-					value: '0',
-				},
+			console.log(safeTx)
+			setIsDeploying(false)
+		} catch(e) {
+			toast({
+				title: 'Some error occured',
+				status: 'error',
+				duration: 5000,
 			})
+			setIsDeploying(false)
 		}
-
-		const safeTxHash = await safeSdk.getTransactionHash(safeTx)
-		const senderAddress = await signer.getAddress()
-		const signature = await safeSdk.signTransactionHash(safeTxHash)
-
-		console.log('Proposed a transaction with Safe:', safeAddress)
-		console.log('- safeTxHash:', safeTxHash)
-		console.log('- senderAddress:', senderAddress)
-		console.log('- Sender signature:', signature.data)
-
-		const service = new SafeServiceClient({
-			txServiceUrl: CHAIN_INFO[chain?.id ?? defaultChainId].safeTxServiceURL, // Check https://docs.safe.global/backend/available-services
-			ethAdapter,
-		})
-
-		await service.proposeTransaction({
-			safeAddress,
-			safeTransactionData: safeTx.data,
-			safeTxHash,
-			senderAddress,
-			senderSignature: signature.data,
-		})
-
-		toast({
-			title: 'Please open your safe to set the guard',
-			status: 'success',
-			duration: 5000,
-		})
-
-		console.log(safeTx)
-		setIsDeploying(false)
 	}
 
 	return buildComponent()
