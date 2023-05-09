@@ -1,0 +1,285 @@
+{
+	"5": {
+		"id": 5,
+		"name": "Goerli",
+		"isTestNetwork": true,
+		"explorer": {
+			"address": "https://goerli.etherscan.io/address/{{address}}",
+			"transactionHash": "https://goerli.etherscan.io/tx/{{tx}}"
+		},
+		"supportedCurrencies": {
+			"0x73967c6a0904aa032c103b4104747e88c566b1a2": {
+				"label": "DAI",
+				"decimal": 18,
+				"address": "0x73967c6a0904aa032c103b4104747e88c566b1a2"
+			},
+			"0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6": {
+				"label": "WETH",
+				"decimal": 18,
+				"address": "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6"
+			},
+			"0x2f3a40a3db8a7e3d09b0adfefbce4f6f81927557": {
+				"label": "USDC",
+				"decimal": 6,
+				"address": "0x2f3a40a3db8a7e3d09b0adfefbce4f6f81927557"
+			},
+			"0x0000000000000000000000000000000000000001": {
+				"label": "USD",
+				"decimal": 0,
+				"address": "0x0000000000000000000000000000000000000001"
+			},
+			"0x0000000000000000000000000000000000000002": {
+				"label": "SOL",
+				"decimal": 9,
+				"address": "0x0000000000000000000000000000000000000002"
+			}
+		},
+		"subgraphClientUrl": "https://the-graph.questbook.app/subgraphs/name/qb-subgraph-goerli-testnet",
+		"rpcUrls": [
+			"https://goerli.infura.io/v3/"
+		],
+		"qbContracts": {
+			"applications": "0x06c3C145F0879F969F2beb5d8DB1D25c83a7b7C2",
+			"workspace": "0x4881fAB72dE0cBd58Bdc635EE9967d1de87EB5A2",
+			"grantFactory": "0x6C95c4b887eAcC52612e3D79575A1b00Ace05A4d",
+			"reviews": "0xc782342D667f8355869E9f5D23f245804aB10F56",
+			"communication": "0xb5b9b0078200871a443a6f6daA76838FCac5F641",
+			"utility": "0xB6498911FC330CD8acf426AFD15Fa0BD119a6490"
+		}
+	},
+	"10": {
+		"id": 10,
+		"name": "Optimism Mainnet",
+		"isTestNetwork": false,
+		"explorer": {
+			"address": "https://optimistic.etherscan.io/address/{{address}}/",
+			"transactionHash": "https://optimistic.etherscan.io/tx/{{tx}}/"
+		},
+		"supportedCurrencies": {
+			"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1": {
+				"label": "DAI",
+				"decimal": 18,
+				"address": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
+			},
+			"0x4200000000000000000000000000000000000006": {
+				"label": "WETH",
+				"decimal": 18,
+				"address": "0x4200000000000000000000000000000000000006"
+			},
+			"0x7f5c764cbc14f9669b88837ca1490cca17c31607": {
+				"label": "USDC",
+				"decimal": 6,
+				"address": "0x7f5c764cbc14f9669b88837ca1490cca17c31607"
+			},
+			"0x9e1028f5f1d5ede59748ffcee5532509976840e0": {
+				"label": "PERP",
+				"decimal": 18,
+				"address": "0x9e1028f5f1d5ede59748ffcee5532509976840e0"
+			},
+			"0x8700daec35af8ff88c16bdf0418774cb3d7599b4": {
+				"label": "SNX",
+				"decimal": 18,
+				"address": "0x8700daec35af8ff88c16bdf0418774cb3d7599b4"
+			},
+			"0x8c6f28f2f1a3c87f0f938b96d27520d9751ec8d9": {
+				"label": "sUSD",
+				"decimal": 18,
+				"address": "0x8c6f28f2f1a3c87f0f938b96d27520d9751ec8d9"
+			},
+			"0x0000000000000000000000000000000000000001": {
+				"label": "USD",
+				"decimal": 0,
+				"address": "0x0000000000000000000000000000000000000001"
+			},
+			"0x0000000000000000000000000000000000000002": {
+				"label": "SOL",
+				"decimal": 9,
+				"address": "0x0000000000000000000000000000000000000002"
+			}
+		},
+		"subgraphClientUrl": "https://the-graph.questbook.app/subgraphs/name/qb-subgraph-optimism-mainnet",
+		"rpcUrls": [
+			"https://optimism-mainnet.infura.io/v3/"
+		],
+		"qbContracts": {
+			"workspace": "0x2dB223158288B2299480aF577eDF30D5a533F137",
+			"applications": "0xF4Db8BdDF1029764e4E09e7cE34149371a9A7027",
+			"grantFactory": "0xf08bCcf3C9DE7Daf25BCe13C87D0dd69754E0a33",
+			"reviews": "0xab163375C1aD08e24005771cC9908a1C7c61Adaa",
+			"communication": "0x8Bba6EFc1060512Ed7d03262bEC0D2E351B1963B",
+			"utility": "0xa80A1586ad7F1A00a784EB32DAF2244d4136eB35"
+		}
+	},
+	"137": {
+		"id": 137,
+		"name": "Polygon Mainnet",
+		"isTestNetwork": false,
+		"explorer": {
+			"address": "https://polygonscan.com/address/{{address}}/",
+			"transactionHash": "https://polygonscan.com/tx/{{tx}}/"
+		},
+		"supportedCurrencies": {
+			"0x8f3cf7ad23cd3cadbd9735aff958023239c6a063": {
+				"label": "DAI",
+				"decimal": 18,
+				"address": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
+			},
+			"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270": {
+				"label": "WMATIC",
+				"decimal": 18,
+				"address": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+			},
+			"0x7ceb23fd6bc0add59e62ac25578270cff1b9f619": {
+				"label": "WETH",
+				"decimal": 18,
+				"address": "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
+			},
+			"0x2791bca1f2de4661ed88a30c99a7a9449aa84174": {
+				"label": "USDC",
+				"decimal": 6,
+				"address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
+			},
+			"0xd6df932a45c0f255f85145f286ea0b292b21c90b": {
+				"label": "AAVE",
+				"decimal": 18,
+				"address": "0xd6df932a45c0f255f85145f286ea0b292b21c90b"
+			},
+			"0x282d8efce846a88b159800bd4130ad77443fa1a1": {
+				"label": "OCEAN",
+				"decimal": 18,
+				"address": "0x282d8efce846a88b159800bd4130ad77443fa1a1"
+			},
+			"0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f": {
+				"label": "1INCH",
+				"decimal": 18,
+				"address": "0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f"
+			},
+			"0x91c89a94567980f0e9723b487b0bed586ee96aa7": {
+				"label": "BICO",
+				"decimal": 18,
+				"address": "0x91c89a94567980f0e9723b487b0bed586ee96aa7"
+			},
+			"0x6c0ab120dbd11ba701aff6748568311668f63fe0": {
+				"label": "APW",
+				"decimal": 18,
+				"address": "0x6c0ab120dbd11ba701aff6748568311668f63fe0"
+			},
+			"0x236ba47c763a8ee1a8f064e867d0751b1714fdf8": {
+				"label": "BOBA",
+				"decimal": 18,
+				"address": "0x236ba47c763a8ee1a8f064e867d0751b1714fdf8"
+			},
+			"0xd10852df03ea8b8af0cc0b09cac3f7dbb15e0433": {
+				"label": "FLUX",
+				"decimal": 18,
+				"address": "0xd10852df03ea8b8af0cc0b09cac3f7dbb15e0433"
+			},
+			"0x3962f4a0a0051dcce0be73a7e09cef5756736712": {
+				"label": "LPT",
+				"decimal": 18,
+				"address": "0x3962f4a0a0051dcce0be73a7e09cef5756736712"
+			},
+			"0x62c4b802f2153a281dc87994427f606f561cc620": {
+				"label": "SPR",
+				"decimal": 18,
+				"address": "0x62c4b802f2153a281dc87994427f606f561cc620"
+			},
+			"0x980111ae1b84e50222c8843e3a7a038f36fecd2b": {
+				"label": "STACK",
+				"decimal": 18,
+				"address": "0x980111ae1b84e50222c8843e3a7a038f36fecd2b"
+			},
+			"0x3066818837c5e6ed6601bd5a91b0762877a6b731": {
+				"label": "UMA",
+				"decimal": 18,
+				"address": "0x3066818837c5e6ed6601bd5a91b0762877a6b731"
+			},
+			"0xb33eaad8d922b1083446dc23f610c2567fb5180f": {
+				"label": "UNI",
+				"decimal": 18,
+				"address": "0xb33eaad8d922b1083446dc23f610c2567fb5180f"
+			},
+			"0xda537104d6a5edd53c6fbba9a898708e465260b6": {
+				"label": "YFI",
+				"decimal": 18,
+				"address": "0xda537104d6a5edd53c6fbba9a898708e465260b6"
+			},
+			"0x9a06db14d639796b25a6cec6a1bf614fd98815ec": {
+				"label": "ZKP",
+				"decimal": 18,
+				"address": "0x9a06db14d639796b25a6cec6a1bf614fd98815ec"
+			},
+			"0xf7e78d9c4c74df889a83c8c8d6d05bf70ff75876": {
+				"label": "UDT",
+				"decimal": 18,
+				"address": "0xf7e78d9c4c74df889a83c8c8d6d05bf70ff75876"
+			},
+			"0x0000000000000000000000000000000000000001": {
+				"label": "USD",
+				"decimal": 0,
+				"address": "0x0000000000000000000000000000000000000001"
+			},
+			"0x0000000000000000000000000000000000000002": {
+				"label": "SOL",
+				"decimal": 9,
+				"address": "0x0000000000000000000000000000000000000002"
+			}
+		},
+		"subgraphClientUrl": "https://the-graph.questbook.app/subgraphs/name/qb-subgraph-polygon-mainnet",
+		"rpcUrls": [
+			"https://polygon-mainnet.infura.io/v3/",
+			"https://polygon-mainnet.g.alchemy.com/v2/"
+		],
+		"qbContracts": {
+			"workspace": "0x168A72b08FCFF48192E0B1A27486f4394a4F86e1",
+			"applications": "0xE9d6c045232b7f4C07C151f368E747EBE46209E4",
+			"grantFactory": "0xC6b6356FBdcf6CC6EA4Cb90Cd11B7E3c5848F312",
+			"reviews": "0xdC5EbC9130a2e7Ad776E3503fa6Dcf16D80ca915",
+			"communication": "0x3d5302a9c37dEC7B800E08c6E24FC89E0A239840",
+			"utility": "0xd3FcaabBa4ce2664b17e83FeFf0DD3767B88FA2F"
+		}
+	},
+	"42220": {
+		"id": 42220,
+		"name": "Celo Mainnet",
+		"isTestNetwork": false,
+		"explorer": {
+			"address": "https://celoscan.xyz/address/{{address}}",
+			"transactionHash": "https://celoscan.xyz/tx/{{tx}}"
+		},
+		"supportedCurrencies": {
+			"0x471ece3750da237f93b8e339c536989b8978a438": {
+				"label": "CELO",
+				"decimal": 18,
+				"address": "0x471ece3750da237f93b8e339c536989b8978a438"
+			},
+			"0x765de816845861e75a25fca122bb6898b8b1282a": {
+				"label": "cUSD",
+				"decimal": 18,
+				"address": "0x765de816845861e75a25fca122bb6898b8b1282a"
+			},
+			"0x0000000000000000000000000000000000000001": {
+				"label": "USD",
+				"decimal": 0,
+				"address": "0x0000000000000000000000000000000000000001"
+			},
+			"0x0000000000000000000000000000000000000002": {
+				"label": "SOL",
+				"decimal": 9,
+				"address": "0x0000000000000000000000000000000000000002"
+			}
+		},
+		"subgraphClientUrl": "https://the-graph.questbook.app/subgraphs/name/qb-subgraph-celo-mainnet",
+		"rpcUrls": [
+			"https://forno.celo.org"
+		],
+		"qbContracts": {
+			"applications": "0x32798CC9da06363eF2b0eE12e54cD4476D9C891a",
+			"workspace": "0x6D0f81BDA11995f25921aAd5B43359630E65Ca96",
+			"grantFactory": "0xda717ab1206c59493e1E5c66F4e0712B39EC6D81",
+			"reviews": "0x2d49a247AA77cA433218C9567953645bE04A7b3A",
+			"communication": "0x27aB1a33E95cF08Bd9807f9a59BB62ae76827E34",
+			"utility": "0xF796985d9a2BF187af5512EACAa8177A8c077B61"
+		}
+	}
+}
